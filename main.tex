@@ -1,0 +1,66 @@
+\documentclass[reqno]{amsart}
+\usepackage{amsmath,amssymb,amsthm,amsfonts}
+\usepackage{physics}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+\usepackage{babel}
+\usepackage{datetime}
+\usepackage{ragged2e}
+\usepackage{siunitx}
+
+% ----------------------------------------------------------------
+\let\oldtocsection=\tocsection
+
+\let\oldtocsubsection=\tocsubsection
+
+\let\oldtocsubsubsection=\tocsubsubsection
+
+\renewcommand{\tocsection}[2]{\hspace{0em}\oldtocsection{#1}{#2}}
+\renewcommand{\tocsubsection}[2]{\hspace{1em}\oldtocsubsection{#1}{#2}}
+\renewcommand{\tocsubsubsection}[2]{\hspace{2em}\oldtocsubsubsection{#1}{#2}}
+\makeatletter
+\renewcommand\subsection{\@startsection{subsection}{2}%
+  \z@{.5\linespacing\@plus.7\linespacing}{-.5em}%
+  {\normalfont\scshape\justify}}
+\makeatother
+% ----------------------------------------------------------------
+
+\newdateformat{monthyeardate}{%
+  \monthname[\THEMONTH] \THEYEAR}
+\numberwithin{equation}{section}
+\numberwithin{figure}{section}
+\tolerance=1
+\emergencystretch=\maxdimen
+\hyphenpenalty=10000
+\hbadness=10000
+\setcounter{tocdepth}{3}
+
+\title{Ground State Energy Simulations Using Monte Carlo Random Walk}
+\author[Elliott Ashby]{Elliott Ashby \\ Physics and Astronomy \\ University of Southamton}
+\date{\monthyeardate\today}
+% ----------------------------------------------------------------
+
+\begin{document}
+\begin{abstract}
+    Placeholder for abstract.
+\end{abstract}
+\maketitle
+\tableofcontents
+\newpage
+\section{Introduction}
+\section{Method}
+\section{Results}
+\section{Discussion}
+\section{Conclusion}
+
+\appendix
+\section{Additional Citations}
+18 Examples
+
+6 for each: random walk, Monte Carlo, random numbers
+
+3 in academia, 3 outside academia
+
+\bibliographystyle{unsrtdin}
+\bibliography{citations}
+\end{document}
