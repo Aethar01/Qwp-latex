@@ -48,10 +48,247 @@
 \tableofcontents
 \newpage
 \section{Introduction}
+Overview of the challenges in solving the Schrödinger equation numerically
+The connection between the imaginary-time Schrödinger equation and diffusion processes
+Historical development of Monte Carlo methods in quantum mechanics
+Brief comparison with alternative numerical approaches (matrix diagonalization, variational methods)
+Motivation: why random walks are particularly well-suited for ground state energy calculations
+
 \section{Method}
+\subsection{Theoretical Foundation}
+
+While the usage of Monte Carlo methods to simulate quantum mechanics may seem strange at first, looking at the time-dependent Schrödinger equation as a diffusion equation in imaginary time reveals the connection that makes it possible. Here is the time-dependent Schrödinger equation for a particle of mass $m$ in a potential $V(x)$:
+
+\begin{equation}
+    i\hbar\frac{\partial}{\partial t}\psi(x,t) = -\frac{\hbar^2}{2m}\frac{\partial^2}{\partial x^2}\psi(x,t) + V(x)\psi(x,t) = \hat{H}\psi(x,t)
+\end{equation}
+
+By using $\tau = it$, it becomes:
+
+\begin{equation}
+    \frac{\partial}{\partial \tau}\psi(x,\tau) = \frac{\hbar}{2m}\frac{\partial^2}{\partial x^2}\psi(x,\tau) - \frac{V(x)}{\hbar}\psi(x,\tau) = -\frac{\hat{H}}{\hbar}\psi(x,\tau)
+    \label{eq:diffusion}
+\end{equation}
+
+This is a diffusion equation with a growth/decay term with a diffusion constant $D = \hbar/2m$ where the growth/decay term determines whether the population density of walkers at a given position increases or decreases. 
+
+The general solution to equation \ref{eq:diffusion} can be written using the eigenstates and eigenvalues of the Hamiltonian:
+
+\begin{equation}
+\psi(x,\tau) = \sum_n c_n \phi_n(x)e^{-E_n\tau/\hbar}
+\end{equation}
+
+where $\phi_n(x)$ are the eigenfunctions of the Hamiltonian with corresponding energies $E_n$, and $c_n$ represents the projection of the initial wavefunction onto each eigenstate. If we consider the case where $\tau \to \infty$, all terms decay exponentially, but the ground state decays the slowest:
+
+\begin{equation}
+\lim_{\tau \to \infty}\psi(x,\tau) = c_0\phi_0(x)e^{-E_0\tau/\hbar}
+\end{equation}
+
+If we then were able to simulate the diffusion process for a sufficiently long time, then the distribution of our random walkers would approach the ground state wavefunction $\phi_0(x)$, so the decay rate of the walker population would be the ground state energy $E_0$.
+
+% ----------------------- v TODO v ----------------------- %
+\subsection{Implementation Details}
+
+To implement this approach computationally, we discretize both space and time. For simplicity, we describe the one-dimensional case, though the method extends naturally to higher dimensions.
+
+We introduce a spatial lattice with spacing $h_x$ and temporal steps of size $h_\tau$. The probability $p(j,n)$ for a walker to be at lattice site $j$ after $n$ time steps satisfies:
+
+\begin{equation}
+p(j,n+1) = \frac{1}{2}[1-a(j)][p(j-1,n) + p(j+1,n)]
+\end{equation}
+
+Here, $a(j)$ represents the probability of a walker being absorbed at site $j$, which is related to the potential by:
+
+\begin{equation}
+a(j) = h_\tau \frac{V(x_j)}{\hbar}
+\end{equation}
+
+In the continuum limit with small $h_x$ and $h_\tau$, we obtain:
+
+\begin{equation}
+\frac{\partial p}{\partial \tau} = \frac{1}{2}\frac{\partial^2 p}{\partial x^2} - \frac{V(x)}{\hbar}p
+\end{equation}
+
+which matches our imaginary-time Schrödinger equation when we identify $p(x,\tau)$ with $\psi(x,\tau)$ (up to normalization).
+
+The ground state energy can be extracted by measuring the rate at which the walker population decays:
+
+\begin{equation}
+E_0 = -\frac{\hbar}{\Delta\tau}\ln\left\{\frac{p(\tau+\Delta\tau)}{p(\tau)}\right\}
+\end{equation}
+
+where $p(\tau)$ represents the total number of walkers surviving at time $\tau$. In practical implementations, we determine $E_0$ by plotting $\ln(p(\tau))$ against $\tau$ and measuring the slope after initial transients have decayed.
+
+For bounded potentials like the infinite square well, it is convenient to relate the energy to a dimensionless quantity. If we set $x = aj/J$ where $a$ is the well width and $J$ is an integer boundary parameter, the ground state energy is related to the decay rate $\lambda$ by:
+
+\begin{equation}
+E_0 = \frac{\hbar^2}{ma^2}\lambda J^2
+\end{equation}
+
+For the infinite square well, the exact ground state energy is $E_0 = \pi^2\hbar^2/8ma^2$, so we expect $\lambda J^2 = \pi^2/8 \approx 1.234$.
+
+A practical issue with the absorption-only algorithm is that the walker population inevitably decays to zero. To maintain statistical accuracy, we implement a branching mechanism. By introducing a reference energy $E_s$, we modify the absorption probability to:
+
+\begin{equation}
+a(j) = h_\tau \frac{V(x_j) - E_s}{\hbar}
+\end{equation}
+
+When $a(j) < 0$ (i.e., when $V(x_j) < E_s$), instead of absorption, we create a new walker with probability $|a(j)|$. By dynamically adjusting $E_s$ to maintain a steady walker population, we obtain an estimate of $E_0$.
+
+\subsection{Algorithm Variants}
+
+Several variants of the random walk method have been developed to address different challenges:
+
+\subsubsection{Simple Absorption Method}
+
+The basic method uses random walks with position-dependent absorption probabilities and is suitable for simple one-dimensional problems. Walkers start at an initial position and perform unbiased random steps until they are either absorbed or reach a specified maximum time.
+
+\subsubsection{Diffusion Monte Carlo (DMC) with Branching}
+
+To improve statistical efficiency, DMC introduces a branching mechanism where walkers can both die and replicate. The reference energy $E_s$ is adjusted dynamically to maintain a roughly constant population:
+
+\begin{equation}
+E_s(\tau+\Delta\tau) = \langle V \rangle - \frac{N(\tau+\Delta\tau) - N(\tau)}{N(\tau)\Delta\tau}\hbar
+\end{equation}
+
+where $\langle V \rangle$ is the average potential energy of the current walker distribution, and $N(\tau)$ is the number of walkers at time $\tau$.
+
+\subsubsection{Importance Sampling Methods}
+
+For many potentials, efficiency can be improved by using importance sampling. In guided random walk (GRW) methods, walkers are guided by a trial wavefunction $\psi_T(x)$ that approximates the ground state. This modifies the diffusion process to concentrate walkers in important regions of the potential.
+
+\subsubsection{Computing Expectation Values}
+
+To calculate observables other than energy, we need to sample from the probability distribution $|\psi_0(x)|^2$ rather than $\psi_0(x)$. This can be achieved through a procedure where walkers evolve for time $\tau$, their positions are recorded, and then they continue for another period $\tau$. Only positions of walkers that survive both periods are included in the average:
+
+\begin{equation}
+q(x,\tau) = \int G(0,0;x,\tau)G(x,\tau;y,2\tau)dy \propto |\psi_0(x)|^2
+\end{equation}
+
+where $G(x_1,\tau_1;x_2,\tau_2)$ is the Green's function of the imaginary-time Schrödinger equation.
+
+For the harmonic oscillator potential $V(x) = \frac{1}{2}x^2$, the exact ground state wavefunction is $\psi_0(x) = \pi^{-1/4}e^{-x^2/2}$, leading to $|\psi_0(x)|^2 = \pi^{-1/2}e^{-x^2}$. This provides a benchmark for testing the accuracy of our sampling procedure.
+
+For field theory applications, the method extends naturally to random walks in function space, where the probability of absorption/creation becomes:
+
+\begin{equation}
+a[\phi] = h_\tau\left(v \sum_{j=1}^{N} V(\phi)_j - E_s\right)
+\end{equation}
+
+where $v$ is the unit cell volume in the discretized space.
+
+The optimal runtime parameter $\tau_{opt}$ and initial walker count $N_0$ to achieve a desired accuracy $\delta E_0$ can be estimated from:
+
+\begin{equation}
+\tau_{opt} \approx \frac{\ln(N_0)}{2E_m - E_0} \approx \frac{\ln(E_0/\delta E_0)}{E_m - E_0}
+\end{equation}
+
+\begin{equation}
+N_0 \approx \left(\frac{E_0}{\delta E_0}\right)^{[2+E_0/(E_m-E_0)]}
+\end{equation}
+
+where $E_m$ is the energy of the first excited state not excluded by symmetry considerations.
+
+
+% \subsection{Theoretical Foundation}
+%   The imaginary-time substitution ($\tau = it$) and its effects on the Schrödinger equation
+%     \begin{equation}
+%     i\hbar\frac{\partial}{\partial t}\psi(x,t) = -\frac{\hbar^2}{2m}\frac{\partial^2}{\partial x^2}\psi(x,t) + V(x)\psi(x,t)
+%     \end{equation}
+%     \begin{equation}
+%     -\frac{\partial}{\partial \tau}\psi(x,\tau) = -\frac{\hbar^2}{2m}\frac{\partial^2}{\partial x^2}\psi(x,\tau) + V(x)\psi(x,\tau)
+%     \end{equation}
+%   Transformation into a diffusion equation with absorption/creation terms
+%     \begin{equation}
+%     \frac{\partial p(x,\tau)}{\partial \tau} = \frac{1}{2}\frac{\partial^2 p(x,\tau)}{\partial x^2} \frac{V(x)}{\hbar}p(x,\tau)
+%     \end{equation}
+%   Long-time behavior and asymptotic solution
+%     \begin{equation}
+%     \lim_{\tau \to \infty}\psi(x,\tau) = c_0\phi_0(x)e^{-E_0\tau/\hbar}
+%     \end{equation}
+%   Connection between walker survival rates and ground state energy
+%     \begin{equation}
+%     E_0 = -\frac{\hbar}{\Delta\tau}\ln\left\{\lim_{\tau\to\infty}\frac{p(\tau+\Delta\tau)}{p(\tau)}\right\}
+%     \end{equation}
+
+% \subsection{Implementation Details}
+%   Discretization of space and time with step sizes $h_x$ and $h_\tau$
+%     \begin{equation}
+%     p(j,n+1) = \frac{1}{2}[1-a(j)][p(j-1,n) + p(j+1,n)]
+%     \end{equation}
+%     with absorption probability $a(j) = h_\tau V(x_j)/\hbar$
+%   Branching mechanisms to maintain walker population
+%   Converting walker statistics to energy estimates
+%     \begin{equation}
+%     \lambda J^2 = \frac{\pi^2}{8} \quad \text{for the infinite square well}
+%     \end{equation}
+%   Extracting the ground state wavefunction from walker distributions
+
+% \subsection{Algorithm Variants}
+%   Simple random walks with absorption for 1D potentials
+%   Diffusion Monte Carlo with branching
+%   Green Function Monte Carlo (GFMC) and Guided Random Walk (GRW) approaches
+%   Techniques for computing $|\psi_0(x)|^2$ distribution:
+%     \begin{equation}
+%     q(x,\tau) = \int G(0,0;x,\tau)G(x,\tau;y,2\tau)dy \propto |\psi_0(x)|^2
+%     \end{equation}
+
 \section{Results}
+\subsection{One-Dimensional Test Cases}
+  Infinite square well potential (analytical $E_0 = \pi^2\hbar^2/8ma^2$)
+  Harmonic oscillator potential ($E_0 = \hbar\omega/2 = 0.5$ in natural units)
+    \begin{equation}
+    V(x) = \frac{1}{2}x^2 \quad \text{with ground state} \quad \psi_0(x) = \pi^{-1/4}e^{-x^2/2}
+    \end{equation}
+  Convergence analysis and parameter optimization
+  
+\subsection{Higher-Dimensional Applications}
+  Two-dimensional circular well with energy ratios 1.44 : 3.61 : 6.50
+  Excited state energies using nodal constraints
+  Statistical uncertainty and error analysis
+    \begin{equation}
+    \sigma_{E_0} \approx \frac{E_0}{\sqrt{N_\tau}} \approx N_0^{-1/2}e^{E_0\tau/2}
+    \end{equation}
+
+\subsection{Performance Considerations}
+  Scaling with system dimensionality 
+  Efficiency comparison with other methods
+  Error estimation and confidence intervals
+    \begin{equation}
+    \tau_{opt} \approx \frac{\ln(N_0)}{2E_m E_0} \approx \frac{\ln(E_0/\delta E_0)}{E_m - E_0}
+    \end{equation}
+
 \section{Discussion}
+\subsection{Parameter Optimization}
+  Effects of lattice spacing, time step, and walker population
+  Balancing computational cost and accuracy
+  Handling statistical fluctuations through averaging techniques
+
+\subsection{Method Strengths and Limitations}
+  Robust performance in higher dimensions
+  Challenges with excited states and nodal surfaces
+  Comparison with traditional numerical methods
+  Applicability to different potential types
+
+\subsection{Advanced Applications}
+  Extensions to field theory with probability
+    \begin{equation}
+    a[\phi] = h_\tau\left(v \sum_{j=1}^{N} V(\phi)_j E_s\right)
+    \end{equation}
+  Many-body quantum systems
+  Handling sign problems for fermions
+
 \section{Conclusion}
+Summary of key findings and method effectiveness
+Practical recommendations for implementation
+Future directions for method improvement
+Potential applications to more complex quantum systems
+
+\section*{Appendix}
+Detailed derivations of key equations
+Pseudocode for the main algorithms
+Benchmark data and supplementary results
+
 
 \appendix
 \section{Additional Citations}
