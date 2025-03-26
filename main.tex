@@ -7,6 +7,9 @@
 \usepackage{datetime}
 \usepackage{ragged2e}
 \usepackage{siunitx}
+\usepackage{enumerate}
+\usepackage{pgf}
+\usepackage{lmodern}
 
 % ----------------------------------------------------------------
 \let\oldtocsection=\tocsection
@@ -157,18 +160,56 @@ The algorithm is then as follows:
 
 \subsubsection{Diffusion Monte Carlo with Branching}
 
-The diffusion Monte Carlo with branching method is more complex than the simple absorption method and requires some additional theory.
+The diffusion Monte Carlo with branching method is more complex than the simple absorption method and requires some additional theory. \\
 
+One of the problems with the simple absorption method is that to get reasonable accuracy, a very large number of initial walkers is required. This can be a problem for large systems since the run time will be $O(N)$ where $N$ is the number of walkers since every walker must be simulated individually. \\
 
+While we cannot lower the run time, we can lower the number of initial walkers and also greater our chances of finding the ground state. If we were to kill walkers that have a high probability of being absorbed and birth new walkers at positions with a low probability of being absorbed, we can attempt to maintain a more constant number of walkers throughout the simulation. \\
 
-% ----------------------- v TODO v ----------------------- %
-\subsubsection{Importance Sampling Methods}
+Since this approach requires us to find the probability of a walker being absorbed at some position, it is reasonable to use a potential that is continuous rather than the infinite square well potential. I have chosen to use the harmonic oscillator potential with $m = \omega = 1$:
 
-\subsubsection{Computing Expectation Values}
+\begin{equation}
+    V(x) = \frac{1}{2}x^2
+\end{equation}
+
+The probability of a walker being absorbed at a given position is then:
+
+\begin{equation}
+    a(x) = h_\tau V(x) = \frac{1}{2}h_\tau x^2
+\end{equation}
+
+The algorithm is then as follows:
+
+\fbox{\parbox{\textwidth}{
+        Diffusion Monte Carlo with Branching
+        \begin{enumerate}[(1)]
+            \item
+                \begin{enumerate}[(a)]
+                    \item Initialize $N_0$ walkers in a Gaussian distribution around the centre of the lattice and record their positions $x_i$.
+                    \item Compute initial reference potential energy $V_{ref} = \sum_{i} V(x_i)/N_0$.
+                \end{enumerate}
+            \item For each walker: 
+                \begin{enumerate}[(a)]
+                    \item Move it to a neighbouring lattice site with equal probability to move to any of the neighbouring sites.
+                    \item Compute the potential energy at the new position $V(x)$ and compute the change in potential energy $\Delta V = V(x) - V_{ref}$.
+                    \item If $\Delta V > 0$, kill the walker with probability $\abs{\Delta V \times h_\tau}$. Otherwise, birth a new walker at the new position with the same probability.
+                \end{enumerate}
+            \item Re-calculate 
+                $V_{ref} \leftarrow \sum_{i}\frac{V(x_i)}{N_{a}} - k\left(\frac{N_{a} - N_{b}}{N_{b} \cdot h_\tau}\right)$ where $N_{a}$ is the number of walkers after step 2 and $N_{b}$ is the number of walkers before step 2 and $k$ is a constant to tune.
+            \item Repeat steps 2-3 for a maximum number of steps or until the number of walkers reaches zero.
+            \item The ground state energy can then be approximated as $E_0 = V_{ref}$.
+        \end{enumerate}
+}}
 
 \section{Results}
-\subsection{One-Dimensional Test Cases}
+\subsection{Simple Absorption Method}
+
+\subsection{Diffusion Monte Carlo with Branching}
+
+\include{assets/energy_histogram.pgf}
+
 \section{Discussion}
+While extension to higher dimensions is straightforward, focusing on one-dimensional cases allows for easier visualization and comparison with analytical solutions. I opted to spend more time on the one-dimensional case since it allowed for easier debugging, testing and iteration of the code. \\
 \subsection{Parameter Optimization}
   Effects of lattice spacing, time step, and walker population
   Balancing computational cost and accuracy
