@@ -10,6 +10,8 @@
 \usepackage{enumerate}
 \usepackage{pgf}
 \usepackage{lmodern}
+\usepackage{import}
+\usepackage{tikz}
 
 % ----------------------------------------------------------------
 \let\oldtocsection=\tocsection
@@ -97,6 +99,53 @@ If we then were able to simulate the diffusion process for a sufficiently long t
 
 In order to not have infinite computation time, we must discretize space and time. To do this we can use a lattice with spatial sites $j$ and temporal sites $n$. The probability $p(j,n)$ for a walker to be at lattice site $j$ after $n$ time steps satisfies:
 
+\begin{figure}[h]
+\begin{tikzpicture}[scale=1.5]
+\def\hx{1}
+\def\htau{1}
+
+\draw[-] (-3.25*\hx, 0) -- (3.25*\hx, 0);
+% Draw horizontal axis (x-axis)
+\draw[->] (0, -0.5*\htau) -- (\hx, -0.5*\htau) node[below] {$x$};
+
+
+\draw[-] (0, 0) -- (0, 3.25*\htau);
+% Draw vertical axis (tau-axis)
+\draw[->] (-0.5*\hx, 3*\htau) -- (-0.5*\hx, 3.25*\htau) node[right] {$\tau$};
+
+% Draw lattice points
+\foreach \i in {-3,-2,-1,0,1,2,3} {
+    \foreach \j in {0,1,2,3} {
+        \node[fill=black,circle,inner sep=1pt] at (\i*\hx, \j*\htau) {};
+    }
+}
+
+\draw[-latex, shorten >=0.05cm] (0, 0) -- (-\hx, \htau);
+\draw[-latex, shorten >=0.05cm] (0, 0) -- (\hx, \htau);
+\draw[-latex, shorten >=0.05cm] (-\hx, \htau) -- (-2*\hx, 2*\htau);
+\draw[-latex, shorten >=0.05cm] (-\hx, \htau) -- (0, 2*\htau);
+\draw[-latex, shorten >=0.05cm] (\hx, \htau) -- (0, 2*\htau);
+\draw[-latex, shorten >=0.05cm] (\hx, \htau) -- (2*\hx, 2*\htau);
+\draw[-latex, shorten >=0.05cm] (0, 2*\htau) -- (-\hx, 3*\htau);
+\draw[-latex, shorten >=0.05cm] (0, 2*\htau) -- (\hx, 3*\htau);
+\draw[-latex, shorten >=0.05cm] (-2*\hx, 2*\htau) -- (-\hx, 3*\htau);
+\draw[-latex, shorten >=0.05cm] (2*\hx, 2*\htau) -- (\hx, 3*\htau);
+\draw[-latex, shorten >=0.05cm] (2*\hx, 2*\htau) -- (3*\hx, 3*\htau);
+\draw[-latex, shorten >=0.05cm] (-2*\hx, 2*\htau) -- (-3*\hx, 3*\htau);
+
+\node[below] at (-\hx, 0) {$-h_x$};
+\node[below] at (0, 0) {$0 = x_i$};
+\node[below] at (\hx, 0) {$h_x$};
+
+\node[left] at (-3.25*\hx, 0) {$\tau_i$};
+\node[left] at (-3.25*\hx, \htau) {$\tau_i + h_\tau$};
+
+\node[below] at (-0.5*\hx, 0.5*\htau) {$\frac{1}{2}$};
+\node[below] at (0.5*\hx, 0.5*\htau) {$\frac{1}{2}$};
+\end{tikzpicture}
+\caption{A lattice showing the possible moves of a walker at position $x_i$ and time $\tau_i$. The walker can move to any of the neighbouring sites with equal probability.}
+\end{figure}
+
 \begin{equation}
 p(j,n+1) = \frac{1}{2}[1-a(j)][p(j-1,n) + p(j+1,n)]
 \end{equation}
@@ -142,6 +191,8 @@ Using this potential, we can implement the diffusion equation as a random walk o
 \begin{equation}
     P_{survival}(\tau) = \int_{-L/2}^{L/2} p(x, \tau)^2 dx \approx e^{-\lambda \tau}
 \end{equation}
+
+where $\lambda$ is the decay rate of the population. \\
 
 The algorithm is then as follows:
 
@@ -204,30 +255,104 @@ The algorithm is then as follows:
 \section{Results}
 \subsection{Simple Absorption Method}
 
+% ----------------------- v TODO v ----------------------- % 
+
+$params = \{N_0: 50, maxsteps: 10000, L: 20\}$ \\
+
+Simulation Statistics:\\
+Theoretical Value $(\pi^2/8)$: 1.233701\\
+Average $\lambda (L/2)^2$: 1.228909 (residual: 0.004791)\\
+Median $\lambda (L/2)^2$: 1.199329 (residual: 0.034371)\\
+Mode $\lambda (L/2)^2$: 1.067469 (residual: 0.166232)\\
+Standard Deviation: 0.337445\\
+Range: [0.489469, 3.941426]\\
+\\
+Error Analysis:\\
+Standard Error of Mean (SEM): 0.015091\\
+Residual: 0.004791 ± 0.015091\\
+Relative Error: 0.39%\\
+95\% Confidence Interval: [1.199260, 1.258559]\\
+✅ Theoretical value is within the 95\% confidence interval\\
+\\
+Bootstrap 95\% CI: [1.199885, 1.259244]\\
+✅ Theoretical value is within the bootstrap confidence interval\\
+
+\begin{figure}[h]
+    \centering
+    \import{./assets/one/}{histogram.pgf}
+    \caption{For the Simple Absorption Method, a histogram showing the distribution of walkers with their energy values compared vs the theoretical value. A 95\% confidence interval is shown.}
+    \label{fig:SA_histogram}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \import{./assets/one/}{convergence.pgf}
+    \caption{For the Simple Absorption Method, a running mean of the walkers energy values compared vs the theoretical value as a function of walkers. A 95\% confidence interval is shown.}
+    \label{fig:SA_convergence}
+\end{figure}
+
 \subsection{Diffusion Monte Carlo with Branching}
 
-\include{assets/energy_histogram.pgf}
+$params = \{N_0: 50, h_x: 0.1, maxsteps: 50000, w0: 1.0, k: 0.5, equilibration: 1000\}$ \\
+==================================================\\
+ENERGY STATISTICS\\
+==================================================\\
+Number of samples: 16705\\
+Steps discarded: 1000\\
+Theoretical ground state energy: 0.500000\\
+--------------------------------------------------\\
+Mean energy: 0.507812\\
+Standard deviation: 0.016660\\
+Standard error of the mean: 0.000129\\
+95\% confidence interval: [0.507560, 0.508065]\\
+--------------------------------------------------\\
+Absolute error: 0.007812\\
+Relative error: 1.56\%\\
+--------------------------------------------------\\
+Autocorrelation time: 971 Steps\\
+Effective number of independent samples: 8.6\\
+Corrected standard error: 0.005680\\
+Corrected 95\% confidence interval: [0.494381, 0.521244]\\
+==================================================\\
+✅ Theoretical value (0.5) is within the 95\% confidence interval\\
+==================================================\\
+Final ground state energy estimate: 0.500528\\
+Theoretical ground state energy: 0.500000\\
+
+\begin{figure}[h]
+    \centering
+    \import{./assets/three/}{energy_vref.pgf}
+    \caption{Time average mean potential energy of all walkers plotted with the estimate of the potential energy, $V_{ref}$ as a function of steps.}
+    \label{fig:energy_vref}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \import{./assets/three/}{wave_function.pgf}
+    \caption{For the Diffusion Monte Carlo with Branching method, Ground state wavefunction of potential $V(x) = \frac{1}{2}x^2$ at step 100, 500 and 50000 with the theoretical wavefunction as a function of position.}
+    \label{fig:energy_vs_time}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \import{./assets/three/}{energy_convergence.pgf}
+    \caption{For the Diffusion Monte Carlo with Branching method, the walkers energy and a mean of the walkers energy compared vs the theoretical value as a function of steps. A 95\% confidence interval is shown.}
+    \label{fig:energy_convergence}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \import{./assets/three/}{energy_histogram.pgf}
+    \caption{For the Diffusion Monte Carlo with Branching method, a histogram showing the distribution of walkers with their energy values compared vs the theoretical value. A Normal distribution is fitted to the data and a 95\% confidence interval to the mean is shown.}
+    \label{fig:energy_histogram}
+\end{figure}
 
 \section{Discussion}
 While extension to higher dimensions is straightforward, focusing on one-dimensional cases allows for easier visualization and comparison with analytical solutions. I opted to spend more time on the one-dimensional case since it allowed for easier debugging, testing and iteration of the code. \\
 \subsection{Parameter Optimization}
-  Effects of lattice spacing, time step, and walker population
-  Balancing computational cost and accuracy
-  Handling statistical fluctuations through averaging techniques
+
 
 \subsection{Method Strengths and Limitations}
-  Robust performance in higher dimensions
-  Challenges with excited states and nodal surfaces
-  Comparison with traditional numerical methods
-  Applicability to different potential types
-
-\subsection{Advanced Applications}
-  Extensions to field theory with probability
-    \begin{equation}
-    a[\phi] = h_\tau\left(v \sum_{j=1}^{N} V(\phi)_j E_s\right)
-    \end{equation}
-  Many-body quantum systems
-  Handling sign problems for fermions
 
 \section{Conclusion}
 Summary of key findings and method effectiveness
@@ -236,10 +361,6 @@ Future directions for method improvement
 Potential applications to more complex quantum systems
 
 \section*{Appendix}
-Detailed derivations of key equations
-Pseudocode for the main algorithms
-Benchmark data and supplementary results
-
 
 \appendix
 \section{Additional Citations}
