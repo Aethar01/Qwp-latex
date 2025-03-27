@@ -322,16 +322,18 @@ Bootstrap analysis yields a 95\% confidence interval of 1.1999 to 1.2592.
         \hline
     \end{tabular}
     \caption{Parameters used for the Diffusion Monte Carlo with Branching method.}
-    \label{tab:SA_params}
+    \label{tab:DMCB_params}
 \end{table}
 
-Running the Diffusion Monte Carlo with Branching method with the parameters in table \ref{tab:SA_params} yields the following results: \\
+Running the Diffusion Monte Carlo with Branching method with the parameters in table \ref{tab:DMCB_params} yields the following results: \\
 
 The theoretical value we compare to for the ground state energy is 0.5. Figure \ref{fig:energy_histogram} shows a histogram of how often walkers are found at a given energy value and provides an mean average energy value of $\langle V \rangle = 0.5078$ and has a residual of 0.0078.
 
 Standard deviation of energy values is $\sigma = 0.0167$ and has an SEM of $\sigma_{\bar{x}} = 0.0001$. Using the SEM to find the uncertainty in the residual is then $0.0078 \pm 0.0001$ with a relative error of $1.56\% \pm 0.02$. \\
 
 Autocorrelation analysis revealed an autocorrelation time of 971 steps with an effective number of independent samples of 8.6. Correcting for autocorrelation yields a corrected SEM of $\sigma_{\bar{x}_{corr}} = 0.0057$ and therefore the uncertainty in the residual is $0.0078 \pm 0.0057$ with a relative error of $1.56\% \pm 1.12$. \\
+
+Finally, the last surviving walkers yield a ground state energy estimate of 0.5005. \\
 
 % ----------------------- v TODO v ----------------------- % 
 % $params = \{N_0: 50, h_x: 0.1, maxsteps: 50000, w0: 1.0, k: 0.5, equilibration: 1000\}$ \\
@@ -396,7 +398,27 @@ Autocorrelation analysis revealed an autocorrelation time of 971 steps with an e
 \end{figure}
 
 \section{Discussion}
-While extension to higher dimensions is straightforward, focusing on one-dimensional cases allows for easier visualization and comparison with analytical solutions. I opted to spend more time on the one-dimensional case since it allowed for easier debugging, testing and iteration of the code. \\
+
+The aim of this paper was to simulate the ground state energy of a quantum system using Monte Carlo methods based on the imaginary-time Schrödinger equation. The two methods used were the simple absorption method and the diffusion Monte Carlo with branching method. \\
+
+The simple absorption method was based on Barnes and Daniells \cite{Barnes1984} and was used to simulate the ground state energy of a particle in an infinite square well potential. The method was relatively simple to implement but due to the large number of walkers being simulated at any one time to receive an estimate of the energy to a reasonable accuracy, it was computationally expensive. To mitigate this, I made the simulation multithreaded but on a system with a low thread count this doesn't provide any significant speed-up. \\
+
+\subsection{Simple Absorption Method Techniques}\label{sec:SA_techniques}
+The techniques used for the simple absorption method are, Random Sampling, Linear Regression and Bootstrapping. \\
+
+Random sampling uses pseudo-random numbers to select a sample from a population with pre-known probabilities of selection. In this case, random sampling was used to select whether a walker moves to the left or right in the lattice with probability 0.5. To ensure the random numbers are random enough, either ChaCha12 \cite{Bernstein2008} or Lcg128Xsl64 \cite{Brown1994} (for a seeded generator) were used. ChaCha12 passes the next bit test which requires that the next bit of a random number is negligibly better than equal but Lcg128Xsl64 does not. Perhaps an improvement would be to use ChaCha20 or a seeded pseudo-random number generator that passes the next bit test. \\
+
+Linear regression models the relationship between a dependant variable and $n$ independent variables by fitting a linear equation to the data. In this case linear regression was used to find the decay rate of the population of walkers. I used the least-squares approach which chooses a line that minimizes the sum of squared residuals. Linear regression however assumes that the relationship between the variables is linear in the first place and is sensitive to outliers which can result in some of the anomalies seen in figure \ref{fig:SA_histogram}. \\
+
+Bootstrapping, introduced by Efron in 1979 \cite{Efron1979} re-samples the data with replacement, that is to say, when a sample is taken from the dataset it is put back before the next draw. This allows for the estimation of the sampling distribution of a statistic and can be used to find the confidence interval of the mean. In this case, bootstrapping was used to find the 95\% confidence interval of the mean energy value. Bootstrapping is less effective when the sample size is small or has high dimensionality. Using bootstrapping on the simple absorption method allows the estimation of a confidence interval without the need to estimate the energy distribution as a normal distribution. \\
+
+\subsection{Diffusion Monte Carlo with Branching Techniques}
+The techniques used for the diffusion Monte Carlo with branching method are, Random Sampling and Autocorrelation Analysis. \\
+
+For Random sampling see section \ref{sec:SA_techniques}. \\
+
+Autocorrelation analysis quantifies the correlation between measurements close together in the simulation time series. In this case, a sequence of states or energies (eg. $V_{ref}$) are not often statistically independent, it may be the case that each step depends on the next one. Ignoring this correlation leads to an underestimation of the actual statistical error when calculating averages. By estimating the autocorrelation time ($\tau_{corr}$), we measure how many steps are required to get an independent sample and hence we can determine the number of truly independent samples as ($N_{eff} \approx N/(2\tau_{corr})$) where $N$ is the number of samples. In this case, the autocorrelation time was found to be 971 steps and the effective number of independent samples was 8.6 and recalculating the SEM with this information yielded a corrected SEM of 0.0057, larger than the original SEM of 0.0001. \\
+
 \subsection{Parameter Optimization}
 
 
@@ -407,8 +429,6 @@ Summary of key findings and method effectiveness
 Practical recommendations for implementation
 Future directions for method improvement
 Potential applications to more complex quantum systems
-
-\section*{Appendix}
 
 \appendix
 \section{Additional Citations}
