@@ -134,7 +134,7 @@ In order to not have infinite computation time, we must discretize space and tim
 \draw[-latex, shorten >=0.05cm] (-2*\hx, 2*\htau) -- (-3*\hx, 3*\htau);
 
 \node[below] at (-\hx, 0) {$-h_x$};
-\node[below] at (0, 0) {$0 = x_i$};
+\node[below] at (0, 0) {$x_i = 0$};
 \node[below] at (\hx, 0) {$h_x$};
 
 \node[left] at (-3.25*\hx, 0) {$\tau_i$};
@@ -144,13 +144,14 @@ In order to not have infinite computation time, we must discretize space and tim
 \node[below] at (0.5*\hx, 0.5*\htau) {$\frac{1}{2}$};
 \end{tikzpicture}
 \caption{A lattice showing the possible moves of a walker at position $x_i$ and time $\tau_i$. The walker can move to any of the neighbouring sites with equal probability.}
+\label{fig:lattice}
 \end{figure}
 
 \begin{equation}
 p(j,n+1) = \frac{1}{2}[1-a(j)][p(j-1,n) + p(j+1,n)]
 \end{equation}
 
-and converting to continuous space and time with intervals $h_x$ and $h_\tau$:
+and converting the lattice to continuous space and time with intervals $h_x$ and $h_\tau$ shown in figure \ref{fig:lattice} we get:
 
 \begin{equation}
 p(x, \tau + h_\tau) = \frac{1}{2} \left[1 - a(x)\right] \left[p(x - h_x, \tau) + p(x + h_x, \tau)\right]
@@ -186,7 +187,7 @@ In the case for the simple absorption method, our potential is implemented as a 
 
 where $L$ is the width of the well. \\
 
-Using this potential, we can implement the diffusion equation as a random walk on a lattice where:
+Using this potential, we can implement the diffusion equation as a random walk on a lattice yielding the following equation for the survival probability of a walker:
 
 \begin{equation}
     P_{survival}(\tau) = \int_{-L/2}^{L/2} p(x, \tau)^2 dx \approx e^{-\lambda \tau}
@@ -199,7 +200,7 @@ The algorithm is then as follows:
 \fbox{\parbox{\textwidth}{
         Simple Absorption Method
         \begin{enumerate}
-            \item Initialize the walker population at the centre of the lattice.
+            \item Initialize $N_0$ walkers at the centre of the lattice.
             \item For each walker, move it to a neighbouring lattice site with equal probability to move to any of the neighbouring sites.
             \item If the walker is at the boundary of the lattice ($x \geq L/2$), kill it and record the number of steps it took to reach the boundary.
             \item Repeat steps 2-3 for a maximum number of steps. If any of the walkers survive, mark them as surviving.
@@ -255,27 +256,45 @@ The algorithm is then as follows:
 \section{Results}
 \subsection{Simple Absorption Method}
 
-% ----------------------- v TODO v ----------------------- % 
+\begin{table}[h]
+    \centering
+    \begin{tabular}{cccc}
+        \hline
+        $N_0$ & Max Steps & L & Figure \\
+        \hline
+        500 & 10000 & 20 & \ref{fig:SA_histogram}; \ref{fig:SA_convergence} \\
+        \hline
+    \end{tabular}
+    \caption{Parameters used for the Simple Absorption Method.}
+    \label{tab:SA_params}
+\end{table}
 
-$params = \{N_0: 50, maxsteps: 10000, L: 20\}$ \\
+Running the Simple Absorption Method with the parameters in table \ref{tab:SA_params} yields the following results: \\
 
-Simulation Statistics:\\
-Theoretical Value $(\pi^2/8)$: 1.233701\\
-Average $\lambda (L/2)^2$: 1.228909 (residual: 0.004791)\\
-Median $\lambda (L/2)^2$: 1.199329 (residual: 0.034371)\\
-Mode $\lambda (L/2)^2$: 1.067469 (residual: 0.166232)\\
-Standard Deviation: 0.337445\\
-Range: [0.489469, 3.941426]\\
-\\
-Error Analysis:\\
-Standard Error of Mean (SEM): 0.015091\\
-Residual: 0.004791 ± 0.015091\\
-Relative Error: 0.39%\\
-95\% Confidence Interval: [1.199260, 1.258559]\\
-✅ Theoretical value is within the 95\% confidence interval\\
-\\
-Bootstrap 95\% CI: [1.199885, 1.259244]\\
-✅ Theoretical value is within the bootstrap confidence interval\\
+The theoretical value we are comparing against is $\pi^2/8 \approx 1.2337$. Figure \ref{fig:SA_histogram} shows a histogram of how often walkers are found at a given energy value and provides an mean average energy value of $\overline{\lambda (L/2)^2} = 1.2289$ and has a residual of 0.0048. Standard deviation on this data is $\sigma = 0.3374$ and the range is 0.4895 to 3.9414. \\
+
+Error analysis shows a standard error of the mean (SEM) of $\sigma_{\bar{x}} = 0.0151$ hence the uncertainty in the residual is $0.0048 \pm 0.0151$. Relative error of the simulation is then $0.39\% \pm 1.23$. \\
+
+Bootstrap analysis yields a 95\% confidence interval of 1.1999 to 1.2592.
+
+
+% Simulation Statistics:\\
+% Theoretical Value $(\pi^2/8)$: 1.233701\\
+% Average $\lambda (L/2)^2$: 1.228909 (residual: 0.004791)\\
+% Median $\lambda (L/2)^2$: 1.199329 (residual: 0.034371)\\
+% Mode $\lambda (L/2)^2$: 1.067469 (residual: 0.166232)\\
+% Standard Deviation: 0.337445\\
+% Range: [0.489469, 3.941426]\\
+% \\
+% Error Analysis:\\
+% Standard Error of Mean (SEM): 0.015091\\
+% Residual: 0.004791 ± 0.015091\\
+% Relative Error: 0.39%\\
+% 95\% Confidence Interval: [1.199260, 1.258559]\\
+% ✅ Theoretical value is within the 95\% confidence interval\\
+% \\
+% Bootstrap 95\% CI: [1.199885, 1.259244]\\
+% ✅ Theoretical value is within the bootstrap confidence interval\\
 
 \begin{figure}[h]
     \centering
@@ -293,31 +312,53 @@ Bootstrap 95\% CI: [1.199885, 1.259244]\\
 
 \subsection{Diffusion Monte Carlo with Branching}
 
-$params = \{N_0: 50, h_x: 0.1, maxsteps: 50000, w0: 1.0, k: 0.5, equilibration: 1000\}$ \\
-==================================================\\
-ENERGY STATISTICS\\
-==================================================\\
-Number of samples: 16705\\
-Steps discarded: 1000\\
-Theoretical ground state energy: 0.500000\\
---------------------------------------------------\\
-Mean energy: 0.507812\\
-Standard deviation: 0.016660\\
-Standard error of the mean: 0.000129\\
-95\% confidence interval: [0.507560, 0.508065]\\
---------------------------------------------------\\
-Absolute error: 0.007812\\
-Relative error: 1.56\%\\
---------------------------------------------------\\
-Autocorrelation time: 971 Steps\\
-Effective number of independent samples: 8.6\\
-Corrected standard error: 0.005680\\
-Corrected 95\% confidence interval: [0.494381, 0.521244]\\
-==================================================\\
-✅ Theoretical value (0.5) is within the 95\% confidence interval\\
-==================================================\\
-Final ground state energy estimate: 0.500528\\
-Theoretical ground state energy: 0.500000\\
+\begin{table}[h]
+    \centering
+    \begin{tabular}{ccccccc}
+        \hline
+        $N_0$ & $h_x$ & Max Steps & Initial Width & Dampening Const $k$ & Equilibration & Figure \\
+        \hline
+        50 & 0.1 & 50000 & 1.0 & 0.5 & 1000 & \ref{fig:energy_vref}; \ref{fig:energy_vs_time}; \ref{fig:energy_convergence}; \ref{fig:energy_histogram} \\
+        \hline
+    \end{tabular}
+    \caption{Parameters used for the Diffusion Monte Carlo with Branching method.}
+    \label{tab:SA_params}
+\end{table}
+
+Running the Diffusion Monte Carlo with Branching method with the parameters in table \ref{tab:SA_params} yields the following results: \\
+
+The theoretical value we compare to for the ground state energy is 0.5. Figure \ref{fig:energy_histogram} shows a histogram of how often walkers are found at a given energy value and provides an mean average energy value of $\langle V \rangle = 0.5078$ and has a residual of 0.0078.
+
+Standard deviation of energy values is $\sigma = 0.0167$ and has an SEM of $\sigma_{\bar{x}} = 0.0001$. Using the SEM to find the uncertainty in the residual is then $0.0078 \pm 0.0001$ with a relative error of $1.56\% \pm 0.02$. \\
+
+Autocorrelation analysis revealed an autocorrelation time of 971 steps with an effective number of independent samples of 8.6. Correcting for autocorrelation yields a corrected SEM of $\sigma_{\bar{x}_{corr}} = 0.0057$ and therefore the uncertainty in the residual is $0.0078 \pm 0.0057$ with a relative error of $1.56\% \pm 1.12$. \\
+
+% ----------------------- v TODO v ----------------------- % 
+% $params = \{N_0: 50, h_x: 0.1, maxsteps: 50000, w0: 1.0, k: 0.5, equilibration: 1000\}$ \\
+% ==================================================\\
+% ENERGY STATISTICS\\
+% ==================================================\\
+% Number of samples: 16705\\
+% Steps discarded: 1000\\
+% Theoretical ground state energy: 0.500000\\
+% --------------------------------------------------\\
+% Mean energy: 0.507812\\
+% Standard deviation: 0.016660\\
+% Standard error of the mean: 0.000129\\
+% 95\% confidence interval: [0.507560, 0.508065]\\
+% --------------------------------------------------\\
+% Absolute error: 0.007812\\
+% Relative error: 1.56\%\\
+% --------------------------------------------------\\
+% Autocorrelation time: 971 Steps\\
+% Effective number of independent samples: 8.6\\
+% Corrected standard error: 0.005680\\
+% Corrected 95\% confidence interval: [0.494381, 0.521244]\\
+% ==================================================\\
+% ✅ Theoretical value (0.5) is within the 95\% confidence interval\\
+% ==================================================\\
+% Final ground state energy estimate: 0.500528\\
+% Theoretical ground state energy: 0.500000\\
 
 \begin{figure}[h]
     \centering
@@ -345,6 +386,13 @@ Theoretical ground state energy: 0.500000\\
     \import{./assets/three/}{energy_histogram.pgf}
     \caption{For the Diffusion Monte Carlo with Branching method, a histogram showing the distribution of walkers with their energy values compared vs the theoretical value. A Normal distribution is fitted to the data and a 95\% confidence interval to the mean is shown.}
     \label{fig:energy_histogram}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \import{./assets/three/}{walker_population.pgf}
+    \caption{For the Diffusion Monte Carlo with Branching method, the number of walkers as a function of steps.}
+    \label{fig:walker_population}
 \end{figure}
 
 \section{Discussion}
