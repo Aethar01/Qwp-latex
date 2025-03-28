@@ -41,28 +41,33 @@
 \setcounter{tocdepth}{3}
 
 \title{Ground State Energy Simulations Using Monte Carlo Random Walk}
-\author[Elliott Ashby]{Elliott Ashby \\ Physics and Astronomy \\ University of Southamton}
+\author[Elliott Ashby]{Elliott Ashby \\ Physics and Astronomy \\ University of Southampton}
 \date{\monthyeardate\today}
 % ----------------------------------------------------------------
 
 \begin{document}
 \begin{abstract}
-    Placeholder for abstract.
+    This paper explores the calculation of quantum ground state energies using Monte Carlo random walk simulations derived from the imaginary-time Schrödinger equation, mapping the problem onto a classical diffusion process where the potential energy determines the absorption rate for diffusing walkers. Over long imaginary time, the walker distribution converges to the ground state wavefunction. We implement and compare two algorithms for two different potentials: (1) a Simple Absorption (SA) method applied to a particle in an infinite square well, and (2) a Diffusion Monte Carlo with branching (DMC) method applied to the harmonic oscillator where walkers are removed or duplicated based on their relative potential energy. The SA method yielded an energy estimate of $\overline{\lambda (L/2)^2} = 1.2289 \pm 0.0151 (95\% CI:[1.1999, 1.2592])$, consistent with the theoretical value $\pi^2/8 \approx 1.2337$. The DMC method proved more precise estimate for the harmonic oscillator ground state, yielding $\langle V \rangle = 0.5078 \pm 0.0057 (95\% CI: [0.4966, 0.5190])$ compared to a theoretical value of 0.5. These results demonstrate the ability for Monte Carlo random walks to do ground state calculations at reasonable accuracies.
 \end{abstract}
+\vspace*{-2cm}
 \maketitle
 \tableofcontents
 \newpage
 \section{Introduction}
 
-% ----------------------- v TODO v ----------------------- % 
+Finding the ground state energy is a task done very often in the analysis of quantum mechanical systems but for complex potentials analytical solution to the Schrödinger equation are often extremely difficult. Consequently, numerical methods such as simulations are a powerful, but computationally costly way to solve any given potential. Through transforming the time-dependent Schrödinger equation into imaginary time we can recast the Schrödinger equation into a classical diffusion equation. \\
 
-Overview of the challenges in solving the Schrödinger equation numerically
-The connection between the imaginary-time Schrödinger equation and diffusion processes
-Historical development of Monte Carlo methods in quantum mechanics
-Brief comparison with alternative numerical approaches (matrix diagonalization, variational methods)
-Motivation: why random walks are particularly well-suited for ground state energy calculations
+This paper explores the application of Monte Carlo random walk for simulating these diffusion equation to receive the ground state energy. We implement and analyse two algorithms:
 
-% ----------------------- ^ TODO ^ ----------------------- %
+\begin{itemize}
+    \item Simple Absorption Method:
+        This method uses the case of a free particle in an infinite square well potential where walkers are removed upon reaching the boundary.
+    \item Diffusion Monte Carlo with Branching:
+        This method uses the case of a harmonic oscillator potential, where walkers survive, are duplicated or are killed based on their local potential energy.
+\end{itemize}
+
+For each algorithm we then describe the details of implementation, present example results for both methods, discuss the techniques employed, the accuracy achieved.
+
 \section{Method}
 \subsection{Theoretical Foundation}
 
@@ -212,7 +217,7 @@ The algorithm is then as follows:
 
 \subsubsection{Diffusion Monte Carlo with Branching}
 
-The diffusion Monte Carlo with branching method is more complex than the simple absorption method and requires some additional theory. \\
+The diffusion Monte Carlo with branching method is more complex than the simple absorption method and requires some additional theory. My implementation is based off of both Nakano \ref{nakano_qmc} and Barnes \ref{Barnes1984}
 
 One of the problems with the simple absorption method is that to get reasonable accuracy, a very large number of initial walkers is required. This can be a problem for large systems since the run time will be $O(N)$ where $N$ is the number of walkers since every walker must be simulated individually. \\
 
@@ -273,9 +278,9 @@ Running the Simple Absorption Method with the parameters in table \ref{tab:SA_pa
 
 The theoretical value we are comparing against is $\pi^2/8 \approx 1.2337$. Figure \ref{fig:SA_histogram} shows a histogram of how often walkers are found at a given energy value and provides an mean average energy value of $\overline{\lambda (L/2)^2} = 1.2289$ and has a residual of 0.0048. Standard deviation on this data is $\sigma = 0.3374$ and the range is 0.4895 to 3.9414. \\
 
-Error analysis shows a standard error of the mean (SEM) of $\sigma_{\bar{x}} = 0.0151$ hence the uncertainty in the residual is $0.0048 \pm 0.0151$. Relative error of the simulation is then $0.39\% \pm 1.23$. \\
+Error analysis shows a standard error of the mean (SEM) of $\sigma_{\bar{x}} = 0.0151$ hence the uncertainty in the residual is $0.0048 \pm 0.0151$. Error of the relative residual is then $0.39\% \pm 1.23$. \\
 
-Bootstrap analysis yields a 95\% confidence interval of 1.1999 to 1.2592.
+Bootstrap analysis yields a 95\% confidence interval of [1.1999, 1.2592].
 
 
 % Simulation Statistics:\\
@@ -318,7 +323,7 @@ Bootstrap analysis yields a 95\% confidence interval of 1.1999 to 1.2592.
         \hline
         $N_0$ & $h_x$ & Max Steps & Initial Width & Dampening Const $k$ & Equilibration & Figure \\
         \hline
-        50 & 0.1 & 50000 & 1.0 & 0.5 & 1000 & \ref{fig:energy_vref}; \ref{fig:energy_vs_time}; \ref{fig:energy_convergence}; \ref{fig:energy_histogram} \\
+        50 & 0.1 & 50000 & 1.0 & 0.5 & 1000 & \ref{fig:energy_vref}; \ref{fig:wave_function}; \ref{fig:energy_convergence}; \ref{fig:energy_histogram} \\
         \hline
     \end{tabular}
     \caption{Parameters used for the Diffusion Monte Carlo with Branching method.}
@@ -329,9 +334,11 @@ Running the Diffusion Monte Carlo with Branching method with the parameters in t
 
 The theoretical value we compare to for the ground state energy is 0.5. Figure \ref{fig:energy_histogram} shows a histogram of how often walkers are found at a given energy value and provides an mean average energy value of $\langle V \rangle = 0.5078$ and has a residual of 0.0078.
 
-Standard deviation of energy values is $\sigma = 0.0167$ and has an SEM of $\sigma_{\bar{x}} = 0.0001$. Using the SEM to find the uncertainty in the residual is then $0.0078 \pm 0.0001$ with a relative error of $1.56\% \pm 0.02$. \\
+Standard deviation of energy values is $\sigma = 0.0167$ and has an SEM of $\sigma_{\bar{x}} = 0.0001$. Using the SEM to find the uncertainty in the residual is then $0.0078 \pm 0.0001$ with a error on the relative residual $1.56\% \pm 0.02$. \\
 
-Autocorrelation analysis revealed an autocorrelation time of 971 steps with an effective number of independent samples of 8.6. Correcting for autocorrelation yields a corrected SEM of $\sigma_{\bar{x}_{corr}} = 0.0057$ and therefore the uncertainty in the residual is $0.0078 \pm 0.0057$ with a relative error of $1.56\% \pm 1.12$. \\
+Autocorrelation analysis revealed an autocorrelation time of 971 steps with an effective number of independent samples of 8.6. Correcting for autocorrelation yields a corrected SEM of $\sigma_{\bar{x}_{corr}} = 0.0057$ and therefore the error on the residual is $0.0078 \pm 0.0057$ with an error on the relative residual $1.56\% \pm 1.12$. \\
+
+The corrected 95\% confidence interval using $\sigma_{\bar{x}_{corr}}$ is [0.4966, 0.5190]. \\
 
 Finally, the last surviving walkers yield a ground state energy estimate of 0.5005. \\
 
@@ -373,7 +380,7 @@ Finally, the last surviving walkers yield a ground state energy estimate of 0.50
     \centering
     \import{./assets/three/}{wave_function.pgf}
     \caption{For the Diffusion Monte Carlo with Branching method, Ground state wavefunction of potential $V(x) = \frac{1}{2}x^2$ at step 100, 500 and 50000 with the theoretical wavefunction as a function of position.}
-    \label{fig:energy_vs_time}
+    \label{fig:wave_function}
 \end{figure}
 
 \begin{figure}[h]
@@ -419,19 +426,50 @@ For Random sampling see section \ref{sec:SA_techniques}. \\
 
 Autocorrelation analysis quantifies the correlation between measurements close together in the simulation time series. In this case, a sequence of states or energies (eg. $V_{ref}$) are not often statistically independent, it may be the case that each step depends on the next one. Ignoring this correlation leads to an underestimation of the actual statistical error when calculating averages. By estimating the autocorrelation time ($\tau_{corr}$), we measure how many steps are required to get an independent sample and hence we can determine the number of truly independent samples as ($N_{eff} \approx N/(2\tau_{corr})$) where $N$ is the number of samples. In this case, the autocorrelation time was found to be 971 steps and the effective number of independent samples was 8.6 and recalculating the SEM with this information yielded a corrected SEM of 0.0057, larger than the original SEM of 0.0001. \\
 
+\subsection{Comments on Results}
+\subsubsection{Simple Absorption Method}
+
+The results for the simple absorption method were quite promising. Looking at the residual and its error, we received $0.0048 \pm 0.0151$. Since the error on the residual is larger than the residual itself, we can confidently say that the simulation achieved an accurate results within error. \\
+
+Additionally, bootstrap analysis yielded a 95\% confidence interval of 1.1999 to 1.2592, which contains the theoretical value of 1.2337. This means that, even with the large standard deviation of the data (which can be seen qualitatively in figure \ref{fig:SA_histogram}), the simulation was able to accurately estimate the ground state energy. \\
+
+Looking at figure \ref{fig:SA_convergence}, we can clearly see that as you increase the number of walkers in the simulation the mean slowly converges to the theoretical value. Despite the theoretical value being reached even at around 100 walkers, beyond that point the 95\% confidence interval continues to narrow. Theoretically, if the number of walkers was increased to infinity, the mean would converge to the theoretical value and the confidence interval would be zero. \\
+
+\subsubsection{Diffusion Monte Carlo with Branching}
+
+The results for the diffusion Monte Carlo with branching method were, in comparison, much more accurate. This is likely due to the branching process where walkers that are less useful to find the ground state are killed and new walkers are born in more useful positions. This does remove some of the complete randomness that the simple absorption method has, but crucially it does not use any information about the theoretical wavefunction, only the potential. \\
+
+Since the complete randomness is removed, the standard deviations and confidence intervals calculated before the autocorrelation are not useful. As seen in figure \ref{fig:energy_convergence} and figure \ref{fig:energy_histogram}, the 95\% confidence interval is very tight and the standard deviation is very small. Since the walkers are all converging to the same energy value and the branching process is removing the walkers that are not converging this is expected so to get a more accurate estimate of the error, the autocorrelation is required. \\
+
+After performing the autocorrelation, the corrected SEM was found to be 0.0057 which is much larger than the original SEM of 0.0001. Although this doesn't allow the error on the mean energy to encompass the theoretical value, calculating a new 95\% confidence interval, [0.4966, 0.5190], reveals that the theoretical value does now fall within it (95\% confidence interval for the un-corrected SEM was [0.507560, 0.508065]).
+
+This method additionally allows us to plot the wave function as a function of position itself as in figure \ref{fig:wave_function}. It is clearly shown that a greater number of steps allows the walkers to approach the theoretical wave function. 50000 max steps was chosen as a reasonable upper limit since the wave function approached the theoretical quite closely while not being too costly to run the program. However, we can see that the simulation wasn't actually run for 50000 steps but around 17500 as seem in figure \ref{fig:walker_population}. As the program approaches the ground state wavefunction, walkers will become much more likely to die leading to the drop off seen at around 12500 steps.
+
 \subsection{Parameter Optimization}
 
+Each method and program has various parameters seen in tables \ref{tab:SA_params} and \ref{tab:DMCB_params}. \\
 
-\subsection{Method Strengths and Limitations}
+For the simple absorption method, it was key to balance the lattice size $L$ with the max steps, too large a lattice and walkers would never be arrested, to few steps and walkers wouldn't reach the edge of the lattice. Additionally the number of walkers $N_0$ must be an amount that is reasonably simulate-able with the specification of the computer, too large and process memory and run time would be to large, to small and you would receive a poor estimate of the ground state energy with large error. \\
+
+For the diffusion Monte Carlo with branching method, parameter tuning is less required, since the walkers active at any one time is relatively stable, a low number of initial walkers $N_0$ is viable and preferred keeping memory usage and step simulation time to a minimum. Initial width dampening constant tuning allow for quicker or slower approaches to the ground state wavefunction, but do not change, the end result (assuming you keep the dampening const between 0 and 1). The parameters that have more impact on the result is the equilibration and the step size $h_x$. In the case of the equilibration, it simply discards the results when calculating the statistics for step numbers below it. Since the values below 1000 for my chosen parameters where clearly not useful, this is the number I chose. Ideally $h_x$ should be as small as possible, but decreasing $h_x$ requires a much greater number of max steps for the walkers to be able to explore the available space. Additionally, we know the theoretical wavefunction approaches $0$ at roughly $x=\pm 3$ so having an $h_x > 3$ at maximum will yield results that are not at all useful.
 
 \section{Conclusion}
-Summary of key findings and method effectiveness
-Practical recommendations for implementation
-Future directions for method improvement
-Potential applications to more complex quantum systems
+
+This paper successfully demonstrated the simulation of quantum ground state energies using Monte Carlo random walk methods. Two primary algorithms were implemented based on different potentials and evaluated: the Simple Absorption method for the infinite square well and the Diffusion Monte Carlo with Branching method for the harmonic oscillator. \\
+
+The Simple Absorption method yielded good results for the infinite square well. The simulation produced a mean energy estimate of $\overline{\lambda (L/2)^2} = 1.2289$ corresponding to a residual to the theoretical value ($E_0 = \pi^2/8 \approx 1.2337$) of 0.0048. Although the standard error of the mean was relatively large ($\sigma_{\bar{x}} = 0.0151$), it resulted in an uncertainty that comfortably encompassed the theoretical value. Bootstrap analysis, removing the reliance on the results being normally distributed provided a $95\%$ confidence interval of [1.1999, 1.2592] which too contains the theoretical ground state energy. This indicated that the method can estimate the energy within reasonable error bounds but reducing the error requires substantial computational effort. \\
+
+In contrast the Diffusion Monte Carlo with Branching method applied to the harmonic oscillator proved significantly more accurate. The simulation converged to a mean energy value of $\langle V \rangle = 0.5078$ with a residual to the theoretical ($E_0 = 0.5$) of 0.0078. Using autocorrelation analysis revealed a long correlation time ($\tau_{corr} = 971$) steps, and as such the standard error mean was calculated to $\sigma_{\bar{x}_{corr}} = 0.0057$. Using a $95\%$ confidence interval with $\sigma_{\bar{x}_{corr}}$ yields [0.4966, 0.5190] which successfully includes the theoritical value.
+
+Diffusion Monte Carlo with branching offers superior accuracy (has smaller residuals and tighter confidence intervals relative to the theoretical value) thoughts its implementation and analysis are more involved and dependant on the potential used.
+
+Future work could involve using these same methods and applying them to more complex potentials, higher dimensional cases and incorporating Monte Carlo importance sampling to explorer wider use cases.
 
 \appendix
 \section{Additional Citations}
+\subsection{Brownian Motion}
+Einstein's paper in 1905 \cite{einstein1905} modelled Brownian motion as a random walk, showing that particle movements result from molecular collisions. Since displacements can be treated as independent random variables, Einstein's work to model diffusion in this way is directly tied to this paper. The random walk model managed to predict diffusion coefficients later verified experimentally.
+
 18 Examples
 
 6 for each: random walk, Monte Carlo, random numbers
